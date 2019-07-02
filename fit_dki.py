@@ -44,7 +44,8 @@ def load_data(nifti_path, bval_path, bvec_path, mask_path=None,
 
     return (img, gtab, mask)
 
-def fit_dki(dkimodel, img, mask = None):
+def fit_dki(dkimodel, img, mask=None, x_slice=slice(None, None),
+        y_slice=slice(None, None), z_slice=slice(None, None)):
     """Fit a DKI model to a DWI, applying a mask if provided.
 
     Parameters
@@ -55,6 +56,12 @@ def fit_dki(dkimodel, img, mask = None):
         DWI data to fit to the model
     mask, optional
         A mask isolating the data of interest
+    x_slice : slice, optional
+        Slice of the image to fit
+    y_slice : slice, optional
+        Slice of the image to fit
+    z_slice : slice, optional
+        Slice of the image to fit
 
     Returns
     -------
@@ -64,9 +71,9 @@ def fit_dki(dkimodel, img, mask = None):
 
     mask_data = None
     if mask is not None:
-        mask_data = mask.get_data()
+        mask_data = mask.get_data()[x_slice, y_slice, z_slice]
 
-    return dkimodel.fit(img.get_data(), mask_data)
+    return dkimodel.fit(img.get_data()[x_slice, y_slice, z_slice], mask_data)
 
 def save_image(data, affine, header, output_path):
     """Save some data to a nifti file
@@ -86,8 +93,9 @@ def save_image(data, affine, header, output_path):
             header=header)
     nib.save(new_img, output_path)
 
-def main(nifti_path, bval_path, bvec_path, mask_path=None, mk_path=None,
-        ak_path=None, rk_path=None):
+def main(nifti_path, bval_path, bvec_path, mask_path=None, mask_out_path=None,
+        mk_path=None, ak_path=None, rk_path=None, x_slice=slice(None, None),
+        y_slice=slice(None, None), z_slice=slice(None, None)):
     """Load and fit an image to a DKI model, then save its parameters.
 
     This is meant to deal with the functionality of this module being called as
@@ -103,18 +111,26 @@ def main(nifti_path, bval_path, bvec_path, mask_path=None, mk_path=None,
         Path to the .bvec file
     mask_path : string, optional
         Path to the nifti mask, if one exists
+    mask_out_path : string, optional
+        Path to which the mask slice should be saved
     mk_path : string, optional
         Path to which the mean kurtosis image should be saved
     ak_path : string, optional
         Path to which the axial kurtosis image should be saved
     rk_path : string, optional
         Path to which the radial kurtosis image should be saved
+    x_slice : slice, optional
+        Slice of the image to fit
+    y_slice : slice, optional
+        Slice of the image to fit
+    z_slice : slice, optional
+        Slice of the image to fit
     """
 
     img, gtab, mask = load_data(nifti_path, bval_path, bvec_path, mask_path)
 
     dkimodel = dki.DiffusionKurtosisModel(gtab)
-    dkifit = fit_dki(dkimodel, img, mask)
+    dkifit = fit_dki(dkimodel, img, mask, x_slice, y_slice, z_slice)
 
     # Should think about theoretical min and max kurtosis values for us
     mk = dkifit.mk()
@@ -123,6 +139,11 @@ def main(nifti_path, bval_path, bvec_path, mask_path=None, mk_path=None,
 
     source_affine = img.affine
     source_header = img.header
+
+    if mask_out_path is not None:
+        save_image(mask.get_data()[x_slice, y_slice, z_slice], source_affine,
+                source_header, mask_out_path)
+
     if mk_path is not None:
         save_image(mk, source_affine, source_header, mk_path)
 
@@ -138,10 +159,18 @@ if __name__ == "__main__":
     parser.add_argument('nifti')
     parser.add_argument('bval')
     parser.add_argument('bvec')
-    parser.add_argument('--mask')
+    parser.add_argument('--mask_in')
+    parser.add_argument('--mask_out')
     parser.add_argument('--mk')
     parser.add_argument('--ak')
     parser.add_argument('--rk')
+    parser.add_argument('-x', nargs=2, type=int, default=[None, None])
+    parser.add_argument('-y', nargs=2, type=int, default=[None, None])
+    parser.add_argument('-z', nargs=2, type=int, default=[None, None])
     args = parser.parse_args()
-    main(args.nifti, args.bval, args.bvec, args.mask, args.mk, args.ak, args.rk)
+    main(args.nifti, args.bval, args.bvec, args.mask_in, args.mask_out,
+            args.mk, args.ak, args.rk,
+            x_slice=slice(args.x[0], args.x[1]),
+            y_slice=slice(args.y[0], args.y[1]),
+            z_slice=slice(args.z[0], args.z[1]))
 
