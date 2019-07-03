@@ -6,8 +6,25 @@ import nibabel as nib
 from dipy.io import read_bvals_bvecs
 from dipy.core.gradients import gradient_table
 import dipy.reconst.dki as dki
+import numpy as np
 
-def load_data(nifti_path, bval_path, bvec_path, mask_path=None,
+class DiffusionWeightedImage:
+    def __init__(self, img, gtab):
+        self.img = img
+        self.gtab = gtab
+
+    def getData(self):
+        return(self.img.get_data())
+
+class MaskedDiffusionWeightedImage(DiffusionWeightedImage):
+    def __init__(self, img, gtab, mask):
+        DiffusionWeightedImage.__init__(self, img, gtab)
+        self.mask = mask
+
+    def getData(self):
+        return(self.img.get_data()[self.mask.nonzero()])
+
+def load_dwi(nifti_path, bval_path, bvec_path, mask_path=None,
         b0_threshold=250):
     """Load the data needed to process a diffusion-weighted image.
 
@@ -33,18 +50,17 @@ def load_data(nifti_path, bval_path, bvec_path, mask_path=None,
     mask or None
         mask data, if a mask path was provided
     """
-
-    mask = None
-    if mask_path is not None:
-        mask = nib.load(mask_path)
-
     img = nib.load(nifti_path)
     bvals, bvecs = read_bvals_bvecs(bval_path, bvec_path)
     gtab = gradient_table(bvals, bvecs, b0_threshold=b0_threshold)
 
-    return (img, gtab, mask)
+    if mask_path is not None:
+        mask = nib.load(mask_path)
+        return MaskedDiffusionWeightedImage(img, gtab, mask.get_data())
+    else:
+        return DiffusionWeightedImage(img, gtab)
 
-def fit_dki(dkimodel, img, mask=None, x_slice=slice(None, None),
+def fit_dki(dkimodel, dwi, x_slice=slice(None, None),
         y_slice=slice(None, None), z_slice=slice(None, None)):
     """Fit a DKI model to a DWI, applying a mask if provided.
 
@@ -69,11 +85,14 @@ def fit_dki(dkimodel, img, mask=None, x_slice=slice(None, None),
         A fit from which parameter maps can be generated
     """
 
-    mask_data = None
-    if mask is not None:
-        mask_data = mask.get_data()[x_slice, y_slice, z_slice]
+    data = dwi.img.get_data()[x_slice, y_slice, z_slice]
 
-    return dkimodel.fit(img.get_data()[x_slice, y_slice, z_slice], mask_data)
+    try:
+        mask = dwi.mask[x_slice, y_slice, z_slice]
+    except AttributeError:
+        mask = np.ones(data.shape[:3])
+
+    return dkimodel.fit(data, mask)
 
 def save_image(data, affine, header, output_path):
     """Save some data to a nifti file
@@ -128,25 +147,17 @@ def main(nifti_path, bval_path, bvec_path, mask_path=None, mask_out_path=None,
         Path to which the axial kurtosis image should be saved
     rk_path : string, optional
         Path to which the radial kurtosis image should be saved
-    x_slice : slice, optional
-        Slice of the image to fit
-    y_slice : slice, optional
-        Slice of the image to fit
-    z_slice : slice, optional
-        Slice of the image to fit
+    x_slice, y_slice, z_slice : slice, optional
+        Slices of the image to fit
     """
 
-    img, gtab, mask = load_data(nifti_path, bval_path, bvec_path, mask_path)
+    dwi = load_dwi(nifti_path, bval_path, bvec_path, mask_path)
 
-    dkimodel = dki.DiffusionKurtosisModel(gtab)
-    dkifit = fit_dki(dkimodel, img, mask, x_slice, y_slice, z_slice)
+    dkimodel = dki.DiffusionKurtosisModel(dwi.gtab)
+    dkifit = fit_dki(dkimodel, dwi, x_slice, y_slice, z_slice)
 
-    source_affine = img.affine
-    source_header = img.header
-
-    if mask_out_path is not None:
-        save_image(mask.get_data()[x_slice, y_slice, z_slice], source_affine,
-                source_header, mask_out_path)
+    source_affine = dwi.img.affine
+    source_header = dwi.img.header
 
     # Should think about theoretical min and max kurtosis values for us
     if fa_path is not None:
@@ -169,6 +180,10 @@ def main(nifti_path, bval_path, bvec_path, mask_path=None, mask_out_path=None,
 
     if rk_path is not None:
         save_image(dkifit.rk(), source_affine, source_header, rk_path)
+
+    if mask_out_path is not None:
+        save_image(dwi.mask[x_slice, y_slice, z_slice], source_affine,
+                source_header, mask_out_path)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=
