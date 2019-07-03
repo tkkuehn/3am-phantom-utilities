@@ -94,7 +94,8 @@ def save_image(data, affine, header, output_path):
     nib.save(new_img, output_path)
 
 def main(nifti_path, bval_path, bvec_path, mask_path=None, mask_out_path=None,
-        mk_path=None, ak_path=None, rk_path=None, x_slice=slice(None, None),
+        fa_path=None, md_path=None, ad_path=None, rd_path=None, mk_path=None,
+        ak_path=None, rk_path=None, x_slice=slice(None, None),
         y_slice=slice(None, None), z_slice=slice(None, None)):
     """Load and fit an image to a DKI model, then save its parameters.
 
@@ -113,6 +114,14 @@ def main(nifti_path, bval_path, bvec_path, mask_path=None, mask_out_path=None,
         Path to the nifti mask, if one exists
     mask_out_path : string, optional
         Path to which the mask slice should be saved
+    fa_path : string, optional
+        Path to which the fractional anisotropy image should be saved
+    md_path : string, optional
+        Path to which the mean diffusivity image should be saved
+    ad_path : string, optional
+        Path to which the axial diffusivity image should be saved
+    rd_path : string, optional
+        Path to which the radial diffusivity image should be saved
     mk_path : string, optional
         Path to which the mean kurtosis image should be saved
     ak_path : string, optional
@@ -132,11 +141,6 @@ def main(nifti_path, bval_path, bvec_path, mask_path=None, mask_out_path=None,
     dkimodel = dki.DiffusionKurtosisModel(gtab)
     dkifit = fit_dki(dkimodel, img, mask, x_slice, y_slice, z_slice)
 
-    # Should think about theoretical min and max kurtosis values for us
-    mk = dkifit.mk()
-    ak = dkifit.ak()
-    rk = dkifit.rk()
-
     source_affine = img.affine
     source_header = img.header
 
@@ -144,14 +148,27 @@ def main(nifti_path, bval_path, bvec_path, mask_path=None, mask_out_path=None,
         save_image(mask.get_data()[x_slice, y_slice, z_slice], source_affine,
                 source_header, mask_out_path)
 
+    # Should think about theoretical min and max kurtosis values for us
+    if fa_path is not None:
+        save_image(dkifit.fa, source_affine, source_header, fa_path)
+
+    if md_path is not None:
+        save_image(dkifit.md, source_affine, source_header, md_path)
+
+    if ad_path is not None:
+        save_image(dkifit.ad, source_affine, source_header, ad_path)
+
+    if rd_path is not None:
+        save_image(dkifit.rd, source_affine, source_header, rd_path)
+
     if mk_path is not None:
-        save_image(mk, source_affine, source_header, mk_path)
+        save_image(dkifit.mk(), source_affine, source_header, mk_path)
 
     if ak_path is not None:
-        save_image(ak, source_affine, source_header, ak_path)
+        save_image(dkifit.ak(), source_affine, source_header, ak_path)
 
     if rk_path is not None:
-        save_image(rk, source_affine, source_header, rk_path)
+        save_image(dkifit.rk(), source_affine, source_header, rk_path)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=
@@ -161,6 +178,10 @@ if __name__ == "__main__":
     parser.add_argument('bvec')
     parser.add_argument('--mask_in')
     parser.add_argument('--mask_out')
+    parser.add_argument('--fa')
+    parser.add_argument('--md')
+    parser.add_argument('--ad')
+    parser.add_argument('--rd')
     parser.add_argument('--mk')
     parser.add_argument('--ak')
     parser.add_argument('--rk')
@@ -169,7 +190,8 @@ if __name__ == "__main__":
     parser.add_argument('-z', nargs=2, type=int, default=[None, None])
     args = parser.parse_args()
     main(args.nifti, args.bval, args.bvec, args.mask_in, args.mask_out,
-            args.mk, args.ak, args.rk,
+            fa_path=args.fa, md_path=args.md, ad_path=args.ad, rd_path=args.rd,
+            mk_path=args.mk, ak_path=args.ak, rk_path=args.rk,
             x_slice=slice(args.x[0], args.x[1]),
             y_slice=slice(args.y[0], args.y[1]),
             z_slice=slice(args.z[0], args.z[1]))
