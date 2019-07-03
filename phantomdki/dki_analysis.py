@@ -10,61 +10,38 @@ import nibabel as nib
 import numpy as np
 import matplotlib.pyplot as plt
 
-def prepare_images(image_paths, mask_paths=None, x_slice=slice(None, None),
+def prepare_image(image_path, mask_path=None, x_slice=slice(None, None),
         y_slice=slice(None, None), z_slice=slice(None, None)):
-    """Load, slice, and mask a set of images.
+    """Load, slice, and mask an image.
 
     Parameters
     ----------
-    image_paths
-        collection of paths from which to load images.
+    image_path
+        path from which to load image.
 
     masks, optional
-        collection of paths from which to load masks.
+        path from which to load mask.
 
     x_slice, y_slice, z_slice : slice, optional
         slices of the image to consider.
 
     Returns
     -------
-    prepared_images
-        collection of images ready for description.
+    prepared_image
+        image ready for description.
     """
-    images = [nib.load(image_path) for image_path in image_paths]
+    image = nib.load(image_path)
 
-    masks = []
-    if mask_paths is not None:
-        masks = [nib.load(mask_path).get_data() for mask_path in mask_paths]
+    mask = []
+    if mask_path is not None:
+        mask = nib.load(mask_path).get_data()
     else:
-        masks = [np.ones(image.get_data().shape) for image in images]
+        mask = np.ones(image.get_data().shape)
 
-    sliced_images = [image.get_data()[x_slice, y_slice, z_slice]
-            for image in images]
-    sliced_masks = [mask[x_slice, y_slice, z_slice]
-            for mask in masks]
+    sliced_image = image.get_data()[x_slice, y_slice, z_slice]
+    sliced_mask = mask[x_slice, y_slice, z_slice]
 
-    return [image[mask.nonzero()] 
-            for image, mask in zip(sliced_images, sliced_masks)]
-
-def compute_statistics(prepared_images):
-    """Compute descriptive statistics for a set of images.
-
-    Parameters
-    ----------
-    prepared_images
-        Collection of images to be described.
-
-    Returns
-    -------
-    means
-        List of mean values.
-
-    stds
-        List of standard deviation values.
-    """
-    means = [np.mean(prepared_image) for prepared_image in prepared_images]
-    stds = [np.std(prepared_image) for prepared_image in prepared_images]
-    return (means, stds)
+    return sliced_image[sliced_mask.nonzero()]
 
 def plot_single(ax, x_data, y_data, y_error, **param_dict):
     out = ax.errorbar(x_data, y_data, yerr=y_error, fmt='.-b', **param_dict)
@@ -84,12 +61,13 @@ def main(image_paths, mask_paths, x_slice, y_slice, z_slice):
         collection of paths from which to load masks.
 
     x_slice, y_slice, z_slice : slice
-        slices of the image to consider.
+        slices of the images to consider.
 
     """
-    prepared_images = prepare_images(image_paths, mask_paths, x_slice, y_slice,
-            z_slice)
-    means, stds = compute_statistics(prepared_images)
+    prepared_images = [prepare_image(image_path, mask_path, x_slice, y_slice,
+            z_slice) for image_path, mask_path in zip(image_paths, mask_paths)]
+    means = [np.mean(prepared_image) for prepared_image in prepared_images]
+    stds = [np.std(prepared_image) for prepared_image in prepared_images]
 
     fig, ax = plt.subplots()
     x_data = list(range(len(means)))
