@@ -14,16 +14,24 @@ class DerivedImage():
     def __init__(self, img):
         self.img = img
 
-    def getData(self):
-        return img.get_data()
+    def getImage(self):
+        return self.img.get_data()
 
-class MaskedDerivedImage:
+    def getFlatData(self):
+        return self.img.get_data().flatten()
+
+class MaskedDerivedImage(DerivedImage):
     def __init__(self, img, mask):
-        self.img = img
+        DerivedImage.__init__(self, img)
         self.mask = mask
+        img_data = self.img.get_data()
+        self.data = np.ma.array(img_data, mask=~mask)
 
-    def getData(self):
-        return img.get_data(mask.nonzero())
+    def getImage(self):
+        return self.data.data
+
+    def getFlatData(self):
+        return self.data.compressed()
 
 def load_derived_image(image_path, mask_path=None):
     img = nib.load(image_path)
@@ -34,38 +42,11 @@ def load_derived_image(image_path, mask_path=None):
     else:
         return DerivedImage(img)
 
-def prepare_data(img, x_slice=slice(None, None),
-        y_slice=slice(None, None), z_slice=slice(None, None)):
-    """Load, slice, and mask an image.
-
-    Parameters
-    ----------
-    image
-        image from which to prepare data.
-
-    x_slice, y_slice, z_slice : slice, optional
-        slices of the image to consider.
-
-    Returns
-    -------
-    prepared_image
-        image ready for description.
-    """
-
-    data = img.img.get_data()[x_slice, y_slice, z_slice] 
-
-    try:
-        mask = img.mask[x_slice, y_slice, z_slice]
-    except AttributeError:
-        mask = np.ones(data.shape)
-
-    return data[mask.nonzero()]
-
 def plot_single(ax, x_data, y_data, y_error, **param_dict):
     out = ax.errorbar(x_data, y_data, yerr=y_error, fmt='.-b', **param_dict)
     return out
 
-def main(image_paths, mask_paths, x_slice, y_slice, z_slice):
+def main(image_paths, mask_paths):
     """Compute statistics from a set of images and plot them.
 
     This is meant to facilitate running this module as a script.
@@ -77,10 +58,6 @@ def main(image_paths, mask_paths, x_slice, y_slice, z_slice):
 
     mask_paths
         collection of paths from which to load masks.
-
-    x_slice, y_slice, z_slice : slice
-        slices of the images to consider.
-
     """
     if mask_paths is not None:
         images = [load_derived_image(image_path) for image_path in image_paths]
@@ -88,10 +65,8 @@ def main(image_paths, mask_paths, x_slice, y_slice, z_slice):
         images = [load_derived_image(image_path, mask_path)
                 for image_path, mask_path in zip(image_paths, mask_paths)]
 
-    prepared_images = [prepare_data(image, x_slice, y_slice, z_slice)
-            for image in images]
-    means = [np.mean(prepared_image) for prepared_image in prepared_images]
-    stds = [np.std(prepared_image) for prepared_image in prepared_images]
+    means = [np.mean(image.getFlatData()) for image in images]
+    stds = [np.std(image.getFlatData()) for image in images]
 
     fig, ax = plt.subplots()
     x_data = list(range(len(means)))
@@ -104,16 +79,10 @@ if __name__ == "__main__":
             'Load a nifti of voxel data and produce descriptive statistics.')
     parser.add_argument('images', nargs='+')
     parser.add_argument('--masks', nargs='*')
-    parser.add_argument('-x', nargs=2, type=int, default=[None, None])
-    parser.add_argument('-y', nargs=2, type=int, default=[None, None])
-    parser.add_argument('-z', nargs=2, type=int, default=[None, None])
     parser.add_argument('--xlabel', default='')
     parser.add_argument('--ylabel', default='')
     parser.add_argument('--xvals', nargs="*", type=float)
     args = parser.parse_args()
 
-    main(args.images, mask_paths=args.masks,
-            x_slice=slice(args.x[0], args.x[1]),
-            y_slice=slice(args.y[0], args.y[1]),
-            z_slice=slice(args.z[0], args.z[1]))
+    main(args.images, mask_paths=args.masks)
 
