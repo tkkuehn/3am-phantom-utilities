@@ -46,7 +46,7 @@ def plot_single(ax, x_data, y_data, y_error, **param_dict):
     out = ax.errorbar(x_data, y_data, yerr=y_error, fmt='.-b', **param_dict)
     return out
 
-def main(image_paths, mask_paths):
+def main(image_paths, mask_paths, xvals=None, xlabel="", ylabel=""):
     """Compute statistics from a set of images and plot them.
 
     This is meant to facilitate running this module as a script.
@@ -69,7 +69,13 @@ def main(image_paths, mask_paths):
     stds = [np.std(image.getFlatData()) for image in images]
 
     fig, ax = plt.subplots()
-    x_data = list(range(len(means)))
+    ax.set_xlabel(xlabel)
+    ax.set_ylabel(ylabel)
+
+    if xvals is not None:
+        x_data = xvals
+    else:
+        x_data = list(range(len(means)))
 
     plot_single(ax, x_data, means, stds)
     plt.show()
@@ -84,5 +90,6 @@ if __name__ == "__main__":
     parser.add_argument('--xvals', nargs="*", type=float)
     args = parser.parse_args()
 
-    main(args.images, mask_paths=args.masks)
+    main(args.images, mask_paths=args.masks, xlabel=args.xlabel,
+            ylabel=args.ylabel, xvals=args.xvals)
 
