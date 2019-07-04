@@ -13,16 +13,25 @@ class DiffusionWeightedImage:
         self.img = img
         self.gtab = gtab
 
-    def getData(self):
-        return(self.img.get_data())
+    def getImage(self):
+        return self.img.get_data()
+
+    def getFlatData(self):
+        return self.img.get_data().flatten()
 
 class MaskedDiffusionWeightedImage(DiffusionWeightedImage):
     def __init__(self, img, gtab, mask):
         DiffusionWeightedImage.__init__(self, img, gtab)
         self.mask = mask
+        img_data = self.img.get_data()
+        self.data = np.ma.array(img_data, mask=np.repeat(
+            ~mask[:, :, :, np.newaxis], img_data.shape[3], axis=3))
 
-    def getData(self):
-        return(self.img.get_data()[self.mask.nonzero()])
+    def getImage(self):
+        return self.data.data
+
+    def getFlatData(self):
+        return self.data.compressed()
 
 def load_dwi(nifti_path, bval_path, bvec_path, mask_path=None,
         b0_threshold=250):
@@ -78,7 +87,7 @@ def fit_dki(dkimodel, dwi):
         A fit from which parameter maps can be generated
     """
 
-    data = dwi.img.get_data()
+    data = dwi.getImage()
 
     try:
         mask = dwi.mask
