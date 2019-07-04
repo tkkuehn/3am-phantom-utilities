@@ -13,16 +13,25 @@ class DiffusionWeightedImage:
         self.img = img
         self.gtab = gtab
 
-    def getData(self):
-        return(self.img.get_data())
+    def getImage(self):
+        return self.img.get_data()
+
+    def getFlatData(self):
+        return self.img.get_data().flatten()
 
 class MaskedDiffusionWeightedImage(DiffusionWeightedImage):
     def __init__(self, img, gtab, mask):
         DiffusionWeightedImage.__init__(self, img, gtab)
         self.mask = mask
+        img_data = self.img.get_data()
+        self.data = np.ma.array(img_data, mask=np.repeat(
+            ~mask[:, :, :, np.newaxis], img_data.shape[3], axis=3))
 
-    def getData(self):
-        return(self.img.get_data()[self.mask.nonzero()])
+    def getImage(self):
+        return self.data.data
+
+    def getFlatData(self):
+        return self.data.compressed()
 
 def load_dwi(nifti_path, bval_path, bvec_path, mask_path=None,
         b0_threshold=250):
@@ -60,8 +69,7 @@ def load_dwi(nifti_path, bval_path, bvec_path, mask_path=None,
     else:
         return DiffusionWeightedImage(img, gtab)
 
-def fit_dki(dkimodel, dwi, x_slice=slice(None, None),
-        y_slice=slice(None, None), z_slice=slice(None, None)):
+def fit_dki(dkimodel, dwi):
     """Fit a DKI model to a DWI, applying a mask if provided.
 
     Parameters
@@ -72,12 +80,6 @@ def fit_dki(dkimodel, dwi, x_slice=slice(None, None),
         DWI data to fit to the model
     mask, optional
         A mask isolating the data of interest
-    x_slice : slice, optional
-        Slice of the image to fit
-    y_slice : slice, optional
-        Slice of the image to fit
-    z_slice : slice, optional
-        Slice of the image to fit
 
     Returns
     -------
@@ -85,10 +87,10 @@ def fit_dki(dkimodel, dwi, x_slice=slice(None, None),
         A fit from which parameter maps can be generated
     """
 
-    data = dwi.img.get_data()[x_slice, y_slice, z_slice]
+    data = dwi.getImage()
 
     try:
-        mask = dwi.mask[x_slice, y_slice, z_slice]
+        mask = dwi.mask
     except AttributeError:
         mask = np.ones(data.shape[:3])
 
@@ -112,10 +114,9 @@ def save_image(data, affine, header, output_path):
             header=header)
     nib.save(new_img, output_path)
 
-def main(nifti_path, bval_path, bvec_path, mask_path=None, mask_out_path=None,
+def main(nifti_path, bval_path, bvec_path, mask_path=None,
         fa_path=None, md_path=None, ad_path=None, rd_path=None, mk_path=None,
-        ak_path=None, rk_path=None, x_slice=slice(None, None),
-        y_slice=slice(None, None), z_slice=slice(None, None)):
+        ak_path=None, rk_path=None):
     """Load and fit an image to a DKI model, then save its parameters.
 
     This is meant to deal with the functionality of this module being called as
@@ -131,8 +132,6 @@ def main(nifti_path, bval_path, bvec_path, mask_path=None, mask_out_path=None,
         Path to the .bvec file
     mask_path : string, optional
         Path to the nifti mask, if one exists
-    mask_out_path : string, optional
-        Path to which the mask slice should be saved
     fa_path : string, optional
         Path to which the fractional anisotropy image should be saved
     md_path : string, optional
@@ -147,14 +146,12 @@ def main(nifti_path, bval_path, bvec_path, mask_path=None, mask_out_path=None,
         Path to which the axial kurtosis image should be saved
     rk_path : string, optional
         Path to which the radial kurtosis image should be saved
-    x_slice, y_slice, z_slice : slice, optional
-        Slices of the image to fit
     """
 
     dwi = load_dwi(nifti_path, bval_path, bvec_path, mask_path)
 
     dkimodel = dki.DiffusionKurtosisModel(dwi.gtab)
-    dkifit = fit_dki(dkimodel, dwi, x_slice, y_slice, z_slice)
+    dkifit = fit_dki(dkimodel, dwi)
 
     source_affine = dwi.img.affine
     source_header = dwi.img.header
@@ -181,18 +178,13 @@ def main(nifti_path, bval_path, bvec_path, mask_path=None, mask_out_path=None,
     if rk_path is not None:
         save_image(dkifit.rk(), source_affine, source_header, rk_path)
 
-    if mask_out_path is not None:
-        save_image(dwi.mask[x_slice, y_slice, z_slice], source_affine,
-                source_header, mask_out_path)
-
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=
             'Load a nifti image and fit the data to a DKI model.')
     parser.add_argument('nifti')
     parser.add_argument('bval')
     parser.add_argument('bvec')
-    parser.add_argument('--mask_in')
-    parser.add_argument('--mask_out')
+    parser.add_argument('--mask')
     parser.add_argument('--fa')
     parser.add_argument('--md')
     parser.add_argument('--ad')
@@ -200,14 +192,8 @@ if __name__ == "__main__":
     parser.add_argument('--mk')
     parser.add_argument('--ak')
     parser.add_argument('--rk')
-    parser.add_argument('-x', nargs=2, type=int, default=[None, None])
-    parser.add_argument('-y', nargs=2, type=int, default=[None, None])
-    parser.add_argument('-z', nargs=2, type=int, default=[None, None])
     args = parser.parse_args()
-    main(args.nifti, args.bval, args.bvec, args.mask_in, args.mask_out,
+    main(args.nifti, args.bval, args.bvec, args.mask,
             fa_path=args.fa, md_path=args.md, ad_path=args.ad, rd_path=args.rd,
-            mk_path=args.mk, ak_path=args.ak, rk_path=args.rk,
-            x_slice=slice(args.x[0], args.x[1]),
-            y_slice=slice(args.y[0], args.y[1]),
-            z_slice=slice(args.z[0], args.z[1]))
+            mk_path=args.mk, ak_path=args.ak, rk_path=args.rk)
 
