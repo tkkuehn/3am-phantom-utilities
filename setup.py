@@ -12,6 +12,6 @@ setuptools.setup(
     long_description=long_description,
     long_description_content_type="text/markdown",
     packages=setuptools.find_packages(),
-    install_requires=['nibabel', 'dipy']
+    install_requires=['nibabel', 'dipy', 'skimage']
 )
 
