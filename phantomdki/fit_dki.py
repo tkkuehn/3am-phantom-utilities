@@ -25,7 +25,8 @@ class MaskedDiffusionWeightedImage(DiffusionWeightedImage):
         self.mask = mask
         img_data = self.img.get_data()
         self.data = np.ma.array(img_data, mask=np.repeat(
-            ~mask[:, :, :, np.newaxis], img_data.shape[3], axis=3))
+            np.logical_not(mask[:, :, :, np.newaxis]),
+            img_data.shape[3], axis=3))
 
     def getImage(self):
         return self.data.data
