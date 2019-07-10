@@ -6,8 +6,6 @@ import numpy as np
 import skimage.filters as filters
 import skimage.morphology as mm
 
-img = nib.load('../resources/paper_phantoms/20190308/dwi_bottom_4.nii.gz')
-
 def mask_bubbles(slice_b0):
     slice_b0_threshold = filters.threshold_otsu(slice_b0)
     slice_phantom_mask = slice_b0 > slice_b0_threshold
@@ -22,7 +20,7 @@ def main(nifti_path, slice_idx, mask_output):
     img_b0 = img_data[:, :, :, 0]
 
     slice_b0 = img_b0[:, :, slice_idx]
-    slice_bubble_mask = mask_bubbles(phantom_b0)
+    slice_bubble_mask = mask_bubbles(slice_b0)
 
     out_data = np.zeros(img_b0.shape)
     out_data[:, :, slice_idx] = slice_bubble_mask
