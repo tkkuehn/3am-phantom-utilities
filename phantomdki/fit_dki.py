@@ -7,6 +7,7 @@ from dipy.io import read_bvals_bvecs
 from dipy.core.gradients import gradient_table
 import dipy.reconst.dki as dki
 import numpy as np
+import scipy.ndimage as ndi
 
 class DiffusionWeightedImage:
     def __init__(self, img, gtab):
@@ -70,7 +71,7 @@ def load_dwi(nifti_path, bval_path, bvec_path, mask_path=None,
     else:
         return DiffusionWeightedImage(img, gtab)
 
-def fit_dki(dkimodel, dwi):
+def fit_dki(dkimodel, dwi, blur=False):
     """Fit a DKI model to a DWI, applying a mask if provided.
 
     Parameters
@@ -79,8 +80,6 @@ def fit_dki(dkimodel, dwi):
         A dki model derived from the scan parameters
     img
         DWI data to fit to the model
-    mask, optional
-        A mask isolating the data of interest
 
     Returns
     -------
@@ -89,6 +88,9 @@ def fit_dki(dkimodel, dwi):
     """
 
     data = dwi.getImage()
+    
+    if blur:
+        data = ndi.gaussian_filter(data, [0.5, 0.5, 0, 0])
 
     try:
         mask = dwi.mask
@@ -115,7 +117,7 @@ def save_image(data, affine, header, output_path):
             header=header)
     nib.save(new_img, output_path)
 
-def main(nifti_path, bval_path, bvec_path, mask_path=None,
+def main(nifti_path, bval_path, bvec_path, mask_path=None, blur=False,
         fa_path=None, md_path=None, ad_path=None, rd_path=None, mk_path=None,
         ak_path=None, rk_path=None):
     """Load and fit an image to a DKI model, then save its parameters.
@@ -152,7 +154,7 @@ def main(nifti_path, bval_path, bvec_path, mask_path=None,
     dwi = load_dwi(nifti_path, bval_path, bvec_path, mask_path)
 
     dkimodel = dki.DiffusionKurtosisModel(dwi.gtab)
-    dkifit = fit_dki(dkimodel, dwi)
+    dkifit = fit_dki(dkimodel, dwi, blur)
 
     source_affine = dwi.img.affine
     source_header = dwi.img.header
@@ -186,6 +188,7 @@ if __name__ == "__main__":
     parser.add_argument('bval')
     parser.add_argument('bvec')
     parser.add_argument('--mask')
+    parser.add_argument('--blur', action='store_true')
     parser.add_argument('--fa')
     parser.add_argument('--md')
     parser.add_argument('--ad')
@@ -194,7 +197,7 @@ if __name__ == "__main__":
     parser.add_argument('--ak')
     parser.add_argument('--rk')
     args = parser.parse_args()
-    main(args.nifti, args.bval, args.bvec, args.mask,
+    main(args.nifti, args.bval, args.bvec, args.mask, blur=args.blur,
             fa_path=args.fa, md_path=args.md, ad_path=args.ad, rd_path=args.rd,
             mk_path=args.mk, ak_path=args.ak, rk_path=args.rk)
 
