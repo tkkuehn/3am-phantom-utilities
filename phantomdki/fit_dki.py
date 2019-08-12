@@ -2,74 +2,12 @@
 
 import argparse
 import sys
-import nibabel as nib
-from dipy.io import read_bvals_bvecs
-from dipy.core.gradients import gradient_table
+
 import dipy.reconst.dki as dki
 import numpy as np
 import scipy.ndimage as ndi
 
-class DiffusionWeightedImage:
-    def __init__(self, img, gtab):
-        self.img = img
-        self.gtab = gtab
-
-    def getImage(self):
-        return self.img.get_data()
-
-    def getFlatData(self):
-        return self.img.get_data().flatten()
-
-class MaskedDiffusionWeightedImage(DiffusionWeightedImage):
-    def __init__(self, img, gtab, mask):
-        DiffusionWeightedImage.__init__(self, img, gtab)
-        self.mask = mask
-        img_data = self.img.get_data()
-        self.data = np.ma.array(img_data, mask=np.repeat(
-            np.logical_not(mask[:, :, :, np.newaxis]),
-            img_data.shape[3], axis=3))
-
-    def getImage(self):
-        return self.data.data
-
-    def getFlatData(self):
-        return self.data.compressed()
-
-def load_dwi(nifti_path, bval_path, bvec_path, mask_path=None,
-        b0_threshold=250):
-    """Load the data needed to process a diffusion-weighted image.
-
-    Parameters
-    ----------
-    nifti_path : string
-        Path to the nifti DWI
-    bval_path : string
-        Path to the .bval file
-    bvec_path : string
-        Path to the .bvec file
-    mask_path : string, optional
-        Path to the nifti mask, if one exists
-    b0_threshold
-        Threshold below which a b-value is considered zero
-
-    Returns
-    -------
-    img
-        image data
-    gtab
-        diffusion gradient information
-    mask or None
-        mask data, if a mask path was provided
-    """
-    img = nib.load(nifti_path)
-    bvals, bvecs = read_bvals_bvecs(bval_path, bvec_path)
-    gtab = gradient_table(bvals, bvecs, b0_threshold=b0_threshold)
-
-    if mask_path is not None:
-        mask = nib.load(mask_path)
-        return MaskedDiffusionWeightedImage(img, gtab, mask.get_data())
-    else:
-        return DiffusionWeightedImage(img, gtab)
+from phantomdki import image_io
 
 def fit_dki(dkimodel, dwi, blur=False):
     """Fit a DKI model to a DWI, applying a mask if provided.
@@ -98,24 +36,6 @@ def fit_dki(dkimodel, dwi, blur=False):
         mask = np.ones(data.shape[:3])
 
     return dkimodel.fit(data, mask)
-
-def save_image(data, affine, header, output_path):
-    """Save some data to a nifti file
-
-    Parameters
-    ----------
-    data
-        The image data to be saved
-    affine
-        The affine transform to be used
-    header
-        The nifti header to be used
-    output_path : string
-        Path to the file to be saved 
-    """
-    new_img = nib.nifti1.Nifti1Image(data, affine,
-            header=header)
-    nib.save(new_img, output_path)
 
 def main(nifti_path, bval_path, bvec_path, mask_path=None, blur=False,
         fa_path=None, md_path=None, ad_path=None, rd_path=None, mk_path=None,
@@ -151,7 +71,7 @@ def main(nifti_path, bval_path, bvec_path, mask_path=None, blur=False,
         Path to which the radial kurtosis image should be saved
     """
 
-    dwi = load_dwi(nifti_path, bval_path, bvec_path, mask_path)
+    dwi = image_io.load_dwi(nifti_path, bval_path, bvec_path, mask_path)
 
     dkimodel = dki.DiffusionKurtosisModel(dwi.gtab)
     dkifit = fit_dki(dkimodel, dwi, blur)
@@ -161,25 +81,25 @@ def main(nifti_path, bval_path, bvec_path, mask_path=None, blur=False,
 
     # Should think about theoretical min and max kurtosis values for us
     if fa_path is not None:
-        save_image(dkifit.fa, source_affine, source_header, fa_path)
+        image_io.save_image(dkifit.fa, source_affine, source_header, fa_path)
 
     if md_path is not None:
-        save_image(dkifit.md, source_affine, source_header, md_path)
+        image_io.save_image(dkifit.md, source_affine, source_header, md_path)
 
     if ad_path is not None:
-        save_image(dkifit.ad, source_affine, source_header, ad_path)
+        image_io.save_image(dkifit.ad, source_affine, source_header, ad_path)
 
     if rd_path is not None:
-        save_image(dkifit.rd, source_affine, source_header, rd_path)
+        image_io.save_image(dkifit.rd, source_affine, source_header, rd_path)
 
     if mk_path is not None:
-        save_image(dkifit.mk(), source_affine, source_header, mk_path)
+        image_io.save_image(dkifit.mk(), source_affine, source_header, mk_path)
 
     if ak_path is not None:
-        save_image(dkifit.ak(), source_affine, source_header, ak_path)
+        image_io.save_image(dkifit.ak(), source_affine, source_header, ak_path)
 
     if rk_path is not None:
-        save_image(dkifit.rk(), source_affine, source_header, rk_path)
+        image_io.save_image(dkifit.rk(), source_affine, source_header, rk_path)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=

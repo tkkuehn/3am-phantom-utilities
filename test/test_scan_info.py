@@ -1,5 +1,6 @@
-from phantomdki import scan_info
 import unittest
+
+from phantomdki import scan_info
 
 class TestConcentricArcPattern(unittest.TestCase):
     def setUp(self):

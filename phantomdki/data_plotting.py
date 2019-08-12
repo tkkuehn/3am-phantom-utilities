@@ -6,41 +6,12 @@ The idea here is to produce descriptive statistics for a set of related 3D data 
 """
 
 import argparse
+
 import nibabel as nib
 import numpy as np
 import matplotlib.pyplot as plt
 
-class DerivedImage():
-    def __init__(self, img):
-        self.img = img
-
-    def getImage(self):
-        return self.img.get_data()
-
-    def getFlatData(self):
-        return self.img.get_data().flatten()
-
-class MaskedDerivedImage(DerivedImage):
-    def __init__(self, img, mask):
-        DerivedImage.__init__(self, img)
-        self.mask = mask
-        img_data = self.img.get_data()
-        self.data = np.ma.array(img_data, mask=~mask)
-
-    def getImage(self):
-        return self.data.data
-
-    def getFlatData(self):
-        return self.data.compressed()
-
-def load_derived_image(image_path, mask_path=None):
-    img = nib.load(image_path)
-
-    if mask_path is not None:
-        mask = nib.load(mask_path)
-        return MaskedImage(img, mask.get_data())
-    else:
-        return DerivedImage(img)
+import image_io
 
 def plot_single(ax, x_data, y_data, y_error, **param_dict):
     out = ax.errorbar(x_data, y_data, yerr=y_error, fmt='.-b', **param_dict)
@@ -60,9 +31,10 @@ def main(image_paths, mask_paths, xvals=None, xlabel="", ylabel=""):
         collection of paths from which to load masks.
     """
     if mask_paths is not None:
-        images = [load_derived_image(image_path) for image_path in image_paths]
+        images = [image_io.load_derived_image(image_path)
+                for image_path in image_paths]
     else:
-        images = [load_derived_image(image_path, mask_path)
+        images = [image_io.load_derived_image(image_path, mask_path)
                 for image_path, mask_path in zip(image_paths, mask_paths)]
 
     means = [np.mean(image.getFlatData()) for image in images]
