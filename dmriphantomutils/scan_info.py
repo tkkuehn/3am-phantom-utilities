@@ -11,16 +11,19 @@ class Phantom:
         self.infill_density = infill_density
         self.infill_pattern = infill_pattern
 
-class ScanSession:
-    def __init__(self, name, date, tube, scans):
+class Study:
+    def __init__(self, name, tube, sessions):
         self.name = name
-        self.date = date
         self.tube = tube
+        self.sessions = sessions
+
+class ScanSession:
+    def __init__(self, date, scans):
+        self.date = date
         self.scans = scans
 
 class SingleScan:
-    def __init__(self, name, tube_slice):
-        self.name = name
+    def __init__(self, tube_slice):
         self.tube_slice = tube_slice
 
 class ParallelLinePattern:
