@@ -7,7 +7,7 @@ import dipy.reconst.dki as dki
 import numpy as np
 import scipy.ndimage as ndi
 
-from phantomdki import image_io
+from dmriphantomutils import image_io
 
 def fit_dki(dkimodel, dwi, blur=False):
     """Fit a DKI model to a DWI, applying a mask if provided.

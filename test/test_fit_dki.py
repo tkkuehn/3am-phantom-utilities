@@ -1,6 +1,6 @@
 import unittest
 
-from phantomdki import fit_dki
+from dmriphantomutils import fit_dki
 from test import test_data
 
 class TestFitDki(unittest.TestCase):

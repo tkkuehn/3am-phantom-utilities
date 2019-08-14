@@ -2,7 +2,7 @@ import unittest
 
 import numpy as np
 
-from phantomdki import scan_info, transform_data
+from dmriphantomutils import scan_info, transform_data
 from test import test_data
 
 class TestTransformData(unittest.TestCase):
