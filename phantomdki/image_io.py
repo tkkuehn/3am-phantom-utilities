@@ -78,8 +78,16 @@ class DerivedImage():
 class MaskedDerivedImage(DerivedImage):
     def __init__(self, img, mask):
         DerivedImage.__init__(self, img)
-        self.mask = mask
         img_data = self.img.get_data()
+
+        if len(img_data.shape) > 3:
+            img_data = img_data[..., 0]
+
+        # mask is often 4D for raw data
+        if len(mask.shape) > len(img_data.shape):
+            mask = mask[..., 0]
+
+        self.mask = mask
         self.data = np.ma.array(img_data, mask=~mask)
 
     def getImage(self):
