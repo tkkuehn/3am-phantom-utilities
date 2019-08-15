@@ -11,6 +11,10 @@ class Phantom:
         self.infill_density = infill_density
         self.infill_pattern = infill_pattern
 
+class WaterSlice:
+    def __init__(self):
+        pass
+
 class Study:
     def __init__(self, name, tube, sessions):
         self.name = name
