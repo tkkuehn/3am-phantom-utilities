@@ -4,6 +4,7 @@ import argparse
 import sys
 
 import dipy.reconst.dki as dki
+import dipy.reconst.dti as dti
 import numpy as np
 import scipy.ndimage as ndi
 
@@ -38,7 +39,36 @@ def fit_dki(dwi, blur=False):
 
     return dkimodel.fit(data, mask)
 
-def save_metric_imgs(
+def fit_dti(dwi):
+    dtimodel = dti.TensorModel(dwi.gtab)
+
+    data = dwi.getImage()
+
+    try:
+        mask = dwi.mask
+    except AttributeError:
+        mask = np.ones(data.shape[:3])
+
+    return dtimodel.fit(data, mask)
+
+def save_dti_metric_imgs(dwi, dtifit, fa_path=None, md_path=None, ad_path=None,
+                         rd_path=None):
+    source_affine = dwi.img.affine
+    source_header = dwi.img.header
+
+    if fa_path is not None:
+        image_io.save_image(dtifit.fa, source_affine, source_header, fa_path)
+
+    if md_path is not None:
+        image_io.save_image(dtifit.md, source_affine, source_header, md_path)
+
+    if ad_path is not None:
+        image_io.save_image(dtifit.ad, source_affine, source_header, ad_path)
+
+    if rd_path is not None:
+        image_io.save_image(dtifit.rd, source_affine, source_header, rd_path)
+
+def save_dki_metric_imgs(
         dwi, dkifit, fa_path=None, md_path=None, ad_path=None,
         rd_path=None, mk_path=None, ak_path=None, rk_path=None):
     source_affine = dwi.img.affine
@@ -58,13 +88,13 @@ def save_metric_imgs(
         image_io.save_image(dkifit.rd, source_affine, source_header, rd_path)
 
     if mk_path is not None:
-        image_io.save_image(dkifit.mk(), source_affine, source_header, mk_path)
+        image_io.save_image(dkifit.mk(min_kurtosis=0), source_affine, source_header, mk_path)
 
     if ak_path is not None:
-        image_io.save_image(dkifit.ak(), source_affine, source_header, ak_path)
+        image_io.save_image(dkifit.ak(min_kurtosis=0), source_affine, source_header, ak_path)
 
     if rk_path is not None:
-        image_io.save_image(dkifit.rk(), source_affine, source_header, rk_path)
+        image_io.save_image(dkifit.rk(min_kurtosis=0), source_affine, source_header, rk_path)
 
 def main(nifti_path, bval_path, bvec_path, mask_path=None, blur=False,
          fa_path=None, md_path=None, ad_path=None, rd_path=None, mk_path=None,
@@ -104,7 +134,7 @@ def main(nifti_path, bval_path, bvec_path, mask_path=None, blur=False,
 
     dkifit = fit_dki(dwi, blur)
 
-    save_metric_imgs(dwi, dkifit, fa_path=fa_path, md_path=md_path,
+    save_dki_metric_imgs(dwi, dkifit, fa_path=fa_path, md_path=md_path,
                      ad_path=ad_path, rd_path=rd_path, mk_path=mk_path,
                      ak_path=ak_path, rk_path=rk_path)
 
