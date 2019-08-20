@@ -72,7 +72,7 @@ def gen_geometry_data(mask_data, pattern, truth_from_pattern, centroid, angle):
                 transformed = transform_image_point(
                         m_idx, centroid, angle)
                 ground_truth = truth_from_pattern(pattern, transformed)
-                geometry_data[m_idx, z] = ground_truth
+                geometry_data[m_idx[0], m_idx[1], z] = ground_truth
 
     return geometry_data
 
