@@ -18,15 +18,15 @@ class TestTransformData(unittest.TestCase):
 
     def test_compare_to_pattern(self):
         img = test_data.MockDerivedImage()
+        mask = img.mask
         pattern = scan_info.ConcentricArcPattern((0, 0))
         truth_from_pattern = (lambda pattern, point:
                 np.linalg.norm(np.array(point) - np.array(pattern.origin)))
         centroid = (15, 15)
         angle = 45
 
-        indep, dep = transform_data.compare_to_pattern(
-                img, pattern, truth_from_pattern, centroid, angle)
+        pattern_r = transform_data.gen_geometry_data(
+                mask, pattern, truth_from_pattern, centroid, angle)
 
-        self.assertAlmostEqual(np.mean(indep), np.mean(dep))
-        self.assertAlmostEqual(np.std(indep), np.std(dep))
+        self.assertAlmostEqual(pattern_r[15, 15, 2], 0)
 

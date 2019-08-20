@@ -41,13 +41,13 @@ def transform_image_point(point, centroid, angle):
 
     return (rotated_point[0, 0], rotated_point[1, 0])
 
-def compare_to_pattern(img, pattern, truth_from_pattern, centroid, angle):
+def gen_geometry_data(mask_data, pattern, truth_from_pattern, centroid, angle):
     """Compare scan data to some ground truth.
 
     Parameters
     ----------
-    img : Image
-        3D image (from image_io) to be analyzed.
+    mask_data : array_like 
+        3D mask of points to be analyzed.
     pattern : Pattern
         Pattern (from scan_info) to provide ground truth.
     truth_from_pattern : function(pattern, tuple of float)
@@ -60,28 +60,19 @@ def compare_to_pattern(img, pattern, truth_from_pattern, centroid, angle):
 
     Returns
     -------
-    tuple of array_like
-        An array of ground truth values and an array of the
-        corresponding values from the scan data
+    array_like
+        An image of the calculated geometry data
     """
-    independent = []
-    dependent = []
 
-    data = img.getImage()
-    try:
-        mask = img.mask
-    except AttributeError:
-        mask = np.ones(data.shape)
+    geometry_data = np.zeros(mask_data.shape)
 
-    for z in range(data.shape[2]):
-        for (d_idx, d_val), (m_idx, m_val)  in zip(
-                np.ndenumerate(data[..., z]), np.ndenumerate(mask[..., z])):
+    for z in range(mask_data.shape[2]):
+        for m_idx, m_val in np.ndenumerate(mask_data[..., z]):
             if m_val:
                 transformed = transform_image_point(
-                        d_idx, centroid, angle)
+                        m_idx, centroid, angle)
                 ground_truth = truth_from_pattern(pattern, transformed)
-                independent.append(ground_truth)
-                dependent.append(d_val)
+                geometry_data[m_idx, z] = ground_truth
 
-    return np.array(independent), np.array(dependent)
+    return geometry_data
 
