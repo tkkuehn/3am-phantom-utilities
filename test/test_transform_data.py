@@ -26,7 +26,7 @@ class TestTransformData(unittest.TestCase):
         angle = 45
 
         pattern_r = transform_data.gen_geometry_data(
-                mask, pattern, truth_from_pattern, centroid, angle)
+                mask, pattern, truth_from_pattern, centroid, angle, 1)
 
         self.assertAlmostEqual(pattern_r[15, 15, 2], 0)
 
