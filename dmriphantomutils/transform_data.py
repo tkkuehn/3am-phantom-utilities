@@ -41,23 +41,22 @@ def transform_image_point(point, centroid, angle):
 
     return (rotated_point[0, 0], rotated_point[1, 0])
 
-def gen_geometry_data(mask_data, pattern, truth_from_pattern, centroid, angle,
-                      scaling):
-    """Compare scan data to some ground truth.
+def gen_geometry_data(mask_data, geometry_generator, centroid, angle, scaling):
+    """Generate geometric ground truth data from a mask.
 
     Parameters
     ----------
     mask_data : array_like 
         3D mask of points to be analyzed.
-    pattern : Pattern
-        Pattern (from scan_info) to provide ground truth.
-    truth_from_pattern : function(pattern, tuple of float)
-        Function to get the quantity of interest from a pattern.
+    geometry_generator : function(tuple of float)
+        Function to get the quantity of interest given a point.
     centroid : tuple of int
         Centroid of the phantom in image space.
     angle : float
         The angle by which the phantom would need to be rotated to have
         the fiducial at the bottom in the x-y plane.
+    scaling : float
+        Isotropic scale factor from coords to image space.
 
     Returns
     -------
@@ -74,7 +73,7 @@ def gen_geometry_data(mask_data, pattern, truth_from_pattern, centroid, angle,
                         m_idx, centroid, angle)
                 transformed = (transformed[0] * scaling,
                                transformed[1] * scaling)
-                ground_truth = truth_from_pattern(pattern, transformed)
+                ground_truth = geometry_generator(transformed)
                 geometry_data[m_idx[0], m_idx[1], z] = ground_truth
 
     return geometry_data

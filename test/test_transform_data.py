@@ -20,13 +20,12 @@ class TestTransformData(unittest.TestCase):
         img = test_data.MockDerivedImage()
         mask = img.mask
         pattern = scan_info.ConcentricArcPattern((0, 0))
-        truth_from_pattern = (lambda pattern, point:
-                np.linalg.norm(np.array(point) - np.array(pattern.origin)))
+        get_arc_radius = pattern.get_geometry_generators()['arc_radius']
         centroid = (15, 15)
         angle = 45
 
         pattern_r = transform_data.gen_geometry_data(
-                mask, pattern, truth_from_pattern, centroid, angle, 1)
+                mask, get_arc_radius, centroid, angle, 1)
 
         self.assertAlmostEqual(pattern_r[15, 15, 2], 0)
 
