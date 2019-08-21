@@ -41,7 +41,8 @@ def transform_image_point(point, centroid, angle):
 
     return (rotated_point[0, 0], rotated_point[1, 0])
 
-def gen_geometry_data(mask_data, pattern, truth_from_pattern, centroid, angle):
+def gen_geometry_data(mask_data, pattern, truth_from_pattern, centroid, angle,
+                      scaling):
     """Compare scan data to some ground truth.
 
     Parameters
@@ -71,6 +72,8 @@ def gen_geometry_data(mask_data, pattern, truth_from_pattern, centroid, angle):
             if m_val:
                 transformed = transform_image_point(
                         m_idx, centroid, angle)
+                transformed = (transformed[0] * scaling,
+                               transformed[1] * scaling)
                 ground_truth = truth_from_pattern(pattern, transformed)
                 geometry_data[m_idx[0], m_idx[1], z] = ground_truth
 
