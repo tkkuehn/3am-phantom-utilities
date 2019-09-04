@@ -44,7 +44,8 @@ class ParallelLinePattern:
         self.cura_angle = cura_angle
 
     def get_geometry_generators(self):
-        return {'direction': self._get_direction}
+        return {'direction': self._get_direction,
+                'crossing_angle': lambda point: 0}
 
     def _get_direction(self, point):
         return 90 - self.cura_angle
@@ -55,7 +56,8 @@ class ConcentricArcPattern:
 
     def get_geometry_generators(self):
         return {'direction': self._get_direction,
-                'arc_radius': self._get_arc_radius}
+                'arc_radius': self._get_arc_radius,
+                'crossing_angle': lambda point: 0}
 
     def _get_direction(self, point):
         displacement = (self.origin[0] - point[0], self.origin[1] - point[1])
