@@ -3,6 +3,8 @@
 import argparse
 import sys
 
+from dipy.data import default_sphere
+import dipy.reconst.csdeconv as csd
 import dipy.reconst.dki as dki
 import dipy.reconst.dti as dti
 import numpy as np
@@ -51,6 +53,16 @@ def fit_dti(dwi):
 
     return dtimodel.fit(data, mask)
 
+def fit_csd(target_dwi, response_dwi):
+    response, ratio = csd.response_from_mask(response_dwi.dwi.gtab,
+                                             response_dwi.dwi.getImage(),
+                                             response_dwi.dwi.mask)
+    csd_model = csd.ConstrainedSphericalDeconvModel(response_dwi.dwi.gtab,
+                                                    response)
+    return csd.peaks_from_model(
+        csd_model, target_dwi.dwi.getImage(), default_sphere, 0.5, 0,
+        mask=target_dwi.dwi.mask, npeaks=2)
+
 def save_dti_metric_imgs(dwi, dtifit, fa_path=None, md_path=None, ad_path=None,
                          rd_path=None):
     source_affine = dwi.img.affine
@@ -95,6 +107,16 @@ def save_dki_metric_imgs(
 
     if rk_path is not None:
         image_io.save_image(dkifit.rk(min_kurtosis=0), source_affine, source_header, rk_path)
+
+def save_csd_crossing_angle_img(dwi, csd_peaks, angle_path):
+    peak_cross = np.linalg.norm(np.cross(csd_peaks.peak_dirs[..., 0, :],
+                                         csd_peaks.peak_dirs[..., 1, :],
+                                         axis=-1))
+    peak_dot = np.inner(csd_peaks.peak_dirs[..., 0, :],
+                        csd_peaks.peak_dirs[..., 1, :])
+    angles = np.arctan2(peak_cross, peak_dot)
+
+    image_io.save_image(angles, dwi.img.affine, dwi.img.header, angle_path)
 
 def main(nifti_path, bval_path, bvec_path, mask_path=None, blur=False,
          fa_path=None, md_path=None, ad_path=None, rd_path=None, mk_path=None,
