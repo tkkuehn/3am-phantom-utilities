@@ -61,7 +61,7 @@ def fit_csd(target_dwi, response_dwi):
                                                     response)
     return csd.peaks_from_model(
         csd_model, target_dwi.dwi.getImage(), default_sphere, 0.5, 0,
-        mask=target_dwi.dwi.mask, npeaks=2)
+        mask=target_dwi.dwi.mask, npeaks=2, sh_basis_type='tournier07')
 
 def save_dti_metric_imgs(dwi, dtifit, fa_path=None, md_path=None, ad_path=None,
                          rd_path=None):
@@ -111,12 +111,18 @@ def save_dki_metric_imgs(
 def save_csd_crossing_angle_img(dwi, csd_peaks, angle_path):
     peak_cross = np.linalg.norm(np.cross(csd_peaks.peak_dirs[..., 0, :],
                                          csd_peaks.peak_dirs[..., 1, :],
-                                         axis=-1))
-    peak_dot = np.inner(csd_peaks.peak_dirs[..., 0, :],
-                        csd_peaks.peak_dirs[..., 1, :])
-    angles = np.arctan2(peak_cross, peak_dot)
+                                         axis=-1),
+                                axis=-1)
+    peak_dot = np.einsum('ijkl,ijkl->ijk',
+                         csd_peaks.peak_dirs[..., 0, :],
+                         csd_peaks.peak_dirs[..., 1, :])
+    angles = np.abs(np.degrees(np.arctan(peak_cross / peak_dot)))
 
     image_io.save_image(angles, dwi.img.affine, dwi.img.header, angle_path)
+
+def save_csd_fod_img(dwi, csd_peaks, angle_path):
+    image_io.save_image(
+        csd_peaks.shm_coeff, dwi.img.affine, dwi.img.header, angle_path)
 
 def main(nifti_path, bval_path, bvec_path, mask_path=None, blur=False,
          fa_path=None, md_path=None, ad_path=None, rd_path=None, mk_path=None,
