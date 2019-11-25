@@ -17,8 +17,12 @@ class DiffusionWeightedImage:
 class MaskedDiffusionWeightedImage(DiffusionWeightedImage):
     def __init__(self, img, gtab, mask):
         DiffusionWeightedImage.__init__(self, img, gtab)
-        self.mask = mask
+
         img_data = self.img.get_data()
+        if len(mask.shape) >= len(img_data.shape):
+            mask = mask[..., 0]
+
+        self.mask = mask
         self.data = np.ma.array(img_data, mask=np.repeat(
             np.logical_not(mask[:, :, :, np.newaxis]),
             img_data.shape[3], axis=3))
