@@ -1,20 +1,54 @@
+"""Wrappers for saving and loading DWIs of 3D printed phantoms.
+
+In this module, images are classified as DWIs or derived images. A DWI
+should be the raw 4D data from a diffusion MRI scan, and have associated
+information about the diffusion gradients. A derived image should be
+(usually) 3D data from analysis of a DWI.
+
+Either of the two may have a mask associated with them.
+"""
+
 from dipy.io import read_bvals_bvecs
 from dipy.core.gradients import gradient_table
 import nibabel as nib
 import numpy as np
 
 class DiffusionWeightedImage:
+    """Wrapper class including image and gradient data.
+
+    Parameters
+    ----------
+    img : SpatialImage
+        The NiBabel image of the DWI
+    gtab : GradientTable
+        The DIPY gradient table associated with the scan
+    """
+
     def __init__(self, img, gtab):
         self.img = img
         self.gtab = gtab
 
     def getImage(self):
+        """A 3D numpy array with the image data."""
         return self.img.get_data()
 
     def getFlatData(self):
+        """A 1D numpy array with the image data."""
         return self.img.get_data().flatten()
 
 class MaskedDiffusionWeightedImage(DiffusionWeightedImage):
+    """Wrapper class including an image, mask, and gradient data.
+
+    Parameters
+    ----------
+    img : SpatialImage
+        The NiBabel image of the DWI
+    gtab : GradientTable
+        The DIPY gradient table associated with the scan
+    mask : array_like
+        A binary numpy array, where 1s indicate voxels to be included.
+    """
+
     def __init__(self, img, gtab, mask):
         DiffusionWeightedImage.__init__(self, img, gtab)
 
@@ -28,9 +62,12 @@ class MaskedDiffusionWeightedImage(DiffusionWeightedImage):
             img_data.shape[3], axis=3))
 
     def getImage(self):
+        """A 3D numpy array with the image data, ignoring the mask."""
+
         return self.data.data
 
     def getFlatData(self):
+        """A 1D numpy array with only the masked data."""
         return self.data.compressed()
 
 def load_dwi(nifti_path, bval_path, bvec_path, mask_path=None,
@@ -52,13 +89,10 @@ def load_dwi(nifti_path, bval_path, bvec_path, mask_path=None,
 
     Returns
     -------
-    img
-        image data
-    gtab
-        diffusion gradient information
-    mask or None
-        mask data, if a mask path was provided
+    img : DiffusionWeightedImage
+        The DWI data with a mask, if applicable.
     """
+
     img = nib.load(nifti_path)
     bvals, bvecs = read_bvals_bvecs(bval_path, bvec_path)
     gtab = gradient_table(bvals, bvecs, b0_threshold=b0_threshold)
@@ -70,16 +104,38 @@ def load_dwi(nifti_path, bval_path, bvec_path, mask_path=None,
         return DiffusionWeightedImage(img, gtab)
 
 class DerivedImage():
+    """Wrapper class including an image of data derived from a DWI.
+
+    Parameters
+    ----------
+    img : SpatialImage
+        The NiBabel image of the derived data.
+    """
+
     def __init__(self, img):
         self.img = img
 
     def getImage(self):
+        """A 3D numpy array with the image data."""
+
         return self.img.get_data()
 
     def getFlatData(self):
+        """A 1D numpy array with the image data."""
+
         return self.img.get_data().flatten()
 
 class MaskedDerivedImage(DerivedImage):
+    """Wraps an image of data derived from a DWI with a mask.
+
+    Parameters
+    ----------
+    img : SpatialImage
+        The NiBabel image of the derived data.
+    mask : array_like
+        A 3D binary numpy array, where 1s indicate voxels to be included.
+    """
+
     def __init__(self, img, mask):
         DerivedImage.__init__(self, img)
         img_data = self.img.get_data()
@@ -95,12 +151,31 @@ class MaskedDerivedImage(DerivedImage):
         self.data = np.ma.array(img_data, mask=~mask)
 
     def getImage(self):
+        """A 3D numpy array with the derived data, ignoring the mask."""
+
         return self.data.data
 
     def getFlatData(self):
+        """A 1D numpy array with the masked derived data."""
+
         return self.data.compressed()
 
 def load_derived_image(image_path, mask_path=None):
+    """Load the data from a derived image.
+
+    Parameters
+    ----------
+    image_path : string
+        Path to the nifti derived data volume.
+    mask_path : string, optional
+        Path to the nifti mask, if one exists
+
+    Returns
+    -------
+    img : DerivedImage
+        The derived data with a mask, if applicable.
+    """
+
     img = nib.load(image_path)
 
     if mask_path is not None:
@@ -110,11 +185,11 @@ def load_derived_image(image_path, mask_path=None):
         return DerivedImage(img)
 
 def save_image(data, affine, header, output_path):
-    """Save some data to a nifti file
+    """Save some data to a nifti file.
 
     Parameters
     ----------
-    data
+    data : array_like
         The image data to be saved
     affine
         The affine transform to be used

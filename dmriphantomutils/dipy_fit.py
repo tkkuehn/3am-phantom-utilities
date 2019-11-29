@@ -1,5 +1,7 @@
 #!/usr/bin/python3
 
+"""Wrapper that uses DIPY to fit DTI and DKI representations."""
+
 import argparse
 import sys
 
@@ -15,16 +17,17 @@ def fit_dki(dwi, blur=False):
 
     Parameters
     ---------
-    dkimodel
-        A dki model derived from the scan parameters
-    img
-        DWI data to fit to the model
+    dwi : DiffusionWeightedImage 
+        DWI data to fit to the model.
+    blur : bool, optional
+        True if the image should be blurred before the model fit.
 
     Returns
     -------
-    dwifit
+    dwifit : DiffusionKurtosisFit
         A fit from which parameter maps can be generated
     """
+
     dkimodel = dki.DiffusionKurtosisModel(dwi.gtab)
 
     data = dwi.getImage()
@@ -40,6 +43,21 @@ def fit_dki(dwi, blur=False):
     return dkimodel.fit(data, mask)
 
 def fit_dti(dwi):
+    """Fit a DTI model to a DWI, applying a mask if provided.
+
+    Parameters
+    ---------
+    dwi : DiffusionWeightedImage 
+        DWI data to fit to the model.
+    blur : bool, optional
+        True if the image should be blurred before the model fit.
+
+    Returns
+    -------
+    dwifit : TensorFit
+        A fit from which parameter maps can be generated
+    """
+
     dtimodel = dti.TensorModel(dwi.gtab)
 
     data = dwi.getImage()
@@ -53,6 +71,18 @@ def fit_dti(dwi):
 
 def save_dti_metric_imgs(dwi, dtifit, fa_path=None, md_path=None, ad_path=None,
                          rd_path=None):
+    """Save DTI metric images as NIFTI files.
+
+    Parameters
+    ----------
+    dwi : DiffusionWeightedImage
+        The source image from which the DTI metrics are derived.
+    dtifit : TensorFit
+        The fit data from the DTI.
+    fa_path, md_path, ad_path, rd_path : str, optional
+        The filepath to which each metric image should be saved.
+    """
+
     source_affine = dwi.img.affine
     source_header = dwi.img.header
 
@@ -71,6 +101,20 @@ def save_dti_metric_imgs(dwi, dtifit, fa_path=None, md_path=None, ad_path=None,
 def save_dki_metric_imgs(
         dwi, dkifit, fa_path=None, md_path=None, ad_path=None,
         rd_path=None, mk_path=None, ak_path=None, rk_path=None):
+    """Save DTI metric images as NIFTI files.
+
+    Parameters
+    ----------
+    dwi : DiffusionWeightedImage
+        The source image from which the DTI metrics are derived.
+    dkifit : DiffusionKurtosisFit
+        The fit data from the DKI.
+    fa_path, md_path, ad_path, rd_path : str, optional
+        The filepaths to which each DTI metric image should be saved.
+    mk_path, ak_path, rk_path : str, optional
+        The filepaths to which each DKI metric image should be saved.
+    """
+
     source_affine = dwi.img.affine
     source_header = dwi.img.header
 
@@ -106,27 +150,27 @@ def main(nifti_path, bval_path, bvec_path, mask_path=None, blur=False,
 
     Parameters
     ----------
-    nifti_path : string
+    nifti_path : str
         Path to the nifti DWI
-    bval_path : string
+    bval_path : str
         Path to the .bval file
-    bvec_path : string
+    bvec_path : str
         Path to the .bvec file
-    mask_path : string, optional
+    mask_path : str, optional
         Path to the nifti mask, if one exists
-    fa_path : string, optional
+    fa_path : str, optional
         Path to which the fractional anisotropy image should be saved
-    md_path : string, optional
+    md_path : str, optional
         Path to which the mean diffusivity image should be saved
-    ad_path : string, optional
+    ad_path : str, optional
         Path to which the axial diffusivity image should be saved
-    rd_path : string, optional
+    rd_path : str, optional
         Path to which the radial diffusivity image should be saved
-    mk_path : string, optional
+    mk_path : str, optional
         Path to which the mean kurtosis image should be saved
-    ak_path : string, optional
+    ak_path : str, optional
         Path to which the axial kurtosis image should be saved
-    rk_path : string, optional
+    rk_path : str, optional
         Path to which the radial kurtosis image should be saved
     """
 

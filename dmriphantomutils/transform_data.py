@@ -2,7 +2,12 @@
 
 If we know the infill pattern of a given phantom, we know a few things
 about the geometry of diffusion in that phantom. This module provides a
-way to compare scan data to that known information
+way to compare scan data to that known information.
+
+Specifically, we define a "ground truth space," where the centre of the
+phantom is at the origin, and a fiducial visible from the image is on the
+negative y-axis. Then a translation and rotation can move each voxel's
+coordinates from image space to ground truth space.
 """
 
 import numpy as np
@@ -12,8 +17,9 @@ def transform_image_point(point, centroid, angle):
 
     The infill pattern definitions assume the origin is at the centroid
     of the phantom. This is never the case for scan data, so to compare
-    scan data to a ground truth, we need to perform a rigid
-    transformation to that ground truth space.
+    scan data to a ground truth, we need to translate the image data to
+    move the phantom's centroid to the origin, and rotate it to align a
+    fiducial to the known ground truth.
 
     Parameters
     ----------
@@ -31,6 +37,7 @@ def transform_image_point(point, centroid, angle):
         The corresponding indices of the original point in ground truth
         space.
     """
+
     translated_point = np.array(point) - np.array(centroid)
 
     theta = np.radians(angle)

@@ -2,7 +2,10 @@
 
 """Summarize voxel-based data files.
 
-The idea here is to produce descriptive statistics for a set of related 3D data maps and plot those statistics. Especially when used as a command line script, each image should contain the data for one point, and all the images should need the same slicing.
+The idea here is to produce descriptive statistics for a set of related
+3D data maps and plot those statistics. Especially when used as a
+command line script, each image should contain the data for one point,
+and all the images should need the same slicing.
 """
 
 import argparse
@@ -14,6 +17,22 @@ import matplotlib.pyplot as plt
 import image_io
 
 def plot_single(ax, x_data, y_data, y_error, **param_dict):
+    """Generate one plot with error bars.
+
+    Parameters
+    ----------
+    ax : Axes
+        Axes on which to generate the plot.
+    x_data, y_data : array_like
+        1D array of data to be placed on each axis.
+    y_error : array_like
+        1D array of values to scale the error bars on each point.
+
+    Returns
+    -------
+    ErrorbarContainer
+    """
+    
     out = ax.errorbar(x_data, y_data, yerr=y_error, fmt='.-b', **param_dict)
     return out
 
