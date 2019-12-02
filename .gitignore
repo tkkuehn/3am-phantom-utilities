@@ -4,4 +4,5 @@ resources/
 *.egg-info/
 __pycache__/
 *.py[cod]
+docs/_build/
 
