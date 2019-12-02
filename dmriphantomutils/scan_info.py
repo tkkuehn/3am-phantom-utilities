@@ -3,9 +3,9 @@
 Broadly, the hierarchy of classes here is as follows:
 
 - A Study is comprised of a set of ScanSessions, each examining the same
-sample test tube.
+  sample test tube.
 - A ScanSession is comprised of a set of SingleScans of (different regions
-of) the sample.
+  of) the sample.
 - A sample test tube contains a set of Phantoms.
 - Each phantom has an infill Pattern.
 """
