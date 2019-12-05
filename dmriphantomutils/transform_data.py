@@ -11,6 +11,27 @@ coordinates from image space to ground truth space.
 """
 
 import numpy as np
+from skimage.morphology import binary_closing, disk
+from skimage.measure import label, regionprops
+
+def find_centroid(mask):
+    """Find the centroid of a phantom's mask.
+
+    Parameters
+    ----------
+    mask : array_like
+        A 2D binary array, where 1s indicate voxels containing a
+        phantom.
+
+    Returns
+    -------
+    array_like
+        A 1D array containing the coordinates of the mask's centroid.
+    """
+
+    # Consider voxels that were masked out due to air bubbles etc.
+    closed_mask = label(binary_closing(mask, disk(6)))
+    return regionprops(closed_mask)[0].centroid
 
 def transform_image_point(point, centroid, angle):
     """Perform a rigid transform of a given point.
