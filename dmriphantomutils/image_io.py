@@ -28,11 +28,11 @@ class DiffusionWeightedImage:
         self.img = img
         self.gtab = gtab
 
-    def getImage(self):
+    def get_image(self):
         """A 3D numpy array with the image data."""
         return self.img.get_data()
 
-    def getFlatData(self):
+    def get_flat_data(self):
         """A 1D numpy array with the image data."""
         return self.img.get_data().flatten()
 
@@ -61,12 +61,12 @@ class MaskedDiffusionWeightedImage(DiffusionWeightedImage):
             np.logical_not(mask[:, :, :, np.newaxis]),
             img_data.shape[3], axis=3))
 
-    def getImage(self):
+    def get_image(self):
         """A 3D numpy array with the image data, ignoring the mask."""
 
         return self.data.data
 
-    def getFlatData(self):
+    def get_flat_data(self):
         """A 1D numpy array with only the masked data."""
         return self.data.compressed()
 
@@ -115,12 +115,12 @@ class DerivedImage():
     def __init__(self, img):
         self.img = img
 
-    def getImage(self):
+    def get_image(self):
         """A 3D numpy array with the image data."""
 
         return self.img.get_data()
 
-    def getFlatData(self):
+    def get_flat_data(self):
         """A 1D numpy array with the image data."""
 
         return self.img.get_data().flatten()
@@ -150,12 +150,12 @@ class MaskedDerivedImage(DerivedImage):
         self.mask = mask
         self.data = np.ma.array(img_data, mask=~mask)
 
-    def getImage(self):
+    def get_image(self):
         """A 3D numpy array with the derived data, ignoring the mask."""
 
         return self.data.data
 
-    def getFlatData(self):
+    def get_flat_data(self):
         """A 1D numpy array with the masked derived data."""
 
         return self.data.compressed()
