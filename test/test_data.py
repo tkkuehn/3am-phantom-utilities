@@ -29,10 +29,10 @@ class MockDiffusionWeightedImage():
         self.mask = mask
         self.gtab = gtab
 
-    def getImage(self):
+    def get_image(self):
         return self.data
 
-    def getFlatData(self):
+    def get_flat_data(self):
         return self.data.flatten()
 
 class MockDerivedImage():
@@ -53,9 +53,9 @@ class MockDerivedImage():
         self.data = data
         self.mask = mask
 
-    def getImage(self):
+    def get_image(self):
         return self.data
 
-    def getFlatData(self):
+    def get_flat_data(self):
         return self.data[mask == 1]
 
