@@ -30,7 +30,7 @@ def fit_dki(dwi, blur=False):
 
     dkimodel = dki.DiffusionKurtosisModel(dwi.gtab)
 
-    data = dwi.getImage()
+    data = dwi.get_image()
     
     if blur:
         data = ndi.gaussian_filter(data, [0.5, 0.5, 0, 0])
@@ -60,7 +60,7 @@ def fit_dti(dwi):
 
     dtimodel = dti.TensorModel(dwi.gtab)
 
-    data = dwi.getImage()
+    data = dwi.get_image()
 
     try:
         mask = dwi.mask
