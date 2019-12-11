@@ -52,7 +52,7 @@ To efficiently perform our DTI fit and automatically register our ground truths,
     build_dir = './build/'
     os.makedirs(build_dir, exist_ok=True)
     for mask, idx in zip(phantom_masks, range(6)):
-        image_io.save_image(mask, unmasked_dwi.img.affine, unmasked_dwi.img.header,
+        image_io.save_image(mask, unmasked_dwi.img.affine,
             os.path.join(build_dir, 'mask_slice_' + str(idx) + '.nii.gz'))
 
     # apply masks to raw nifti
@@ -94,7 +94,7 @@ Finally, we can give ``transform_data`` the fiducials, centroids, and phantom in
                 dwi.img.header['pixdim'][1],
                 fiducial=(fiducial[0], fiducial[1]))
             image_io.save_image(
-                metric_img, dwi.img.affine, dwi.img.header,
+                metric_img, dwi.img.affine,
                 os.path.join(
                     build_dir,
                     'slice_' + str(slice_idx) + 'metric_' + metric + '.nii.gz'))

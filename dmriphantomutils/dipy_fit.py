@@ -84,19 +84,18 @@ def save_dti_metric_imgs(dwi, dtifit, fa_path=None, md_path=None, ad_path=None,
     """
 
     source_affine = dwi.img.affine
-    source_header = dwi.img.header
 
     if fa_path is not None:
-        image_io.save_image(dtifit.fa, source_affine, source_header, fa_path)
+        image_io.save_image(dtifit.fa, source_affine, fa_path)
 
     if md_path is not None:
-        image_io.save_image(dtifit.md, source_affine, source_header, md_path)
+        image_io.save_image(dtifit.md, source_affine, md_path)
 
     if ad_path is not None:
-        image_io.save_image(dtifit.ad, source_affine, source_header, ad_path)
+        image_io.save_image(dtifit.ad, source_affine, ad_path)
 
     if rd_path is not None:
-        image_io.save_image(dtifit.rd, source_affine, source_header, rd_path)
+        image_io.save_image(dtifit.rd, source_affine, rd_path)
 
 def save_dki_metric_imgs(
         dwi, dkifit, fa_path=None, md_path=None, ad_path=None,
@@ -116,29 +115,28 @@ def save_dki_metric_imgs(
     """
 
     source_affine = dwi.img.affine
-    source_header = dwi.img.header
 
     # Should think about theoretical min and max kurtosis values for us
     if fa_path is not None:
-        image_io.save_image(dkifit.fa, source_affine, source_header, fa_path)
+        image_io.save_image(dkifit.fa, source_affine, fa_path)
 
     if md_path is not None:
-        image_io.save_image(dkifit.md, source_affine, source_header, md_path)
+        image_io.save_image(dkifit.md, source_affine, md_path)
 
     if ad_path is not None:
-        image_io.save_image(dkifit.ad, source_affine, source_header, ad_path)
+        image_io.save_image(dkifit.ad, source_affine, ad_path)
 
     if rd_path is not None:
-        image_io.save_image(dkifit.rd, source_affine, source_header, rd_path)
+        image_io.save_image(dkifit.rd, source_affine, rd_path)
 
     if mk_path is not None:
-        image_io.save_image(dkifit.mk(min_kurtosis=0), source_affine, source_header, mk_path)
+        image_io.save_image(dkifit.mk(min_kurtosis=0), source_affine, mk_path)
 
     if ak_path is not None:
-        image_io.save_image(dkifit.ak(min_kurtosis=0), source_affine, source_header, ak_path)
+        image_io.save_image(dkifit.ak(min_kurtosis=0), source_affine, ak_path)
 
     if rk_path is not None:
-        image_io.save_image(dkifit.rk(min_kurtosis=0), source_affine, source_header, rk_path)
+        image_io.save_image(dkifit.rk(min_kurtosis=0), source_affine, rk_path)
 
 def main(nifti_path, bval_path, bvec_path, mask_path=None, blur=False,
          fa_path=None, md_path=None, ad_path=None, rd_path=None, mk_path=None,

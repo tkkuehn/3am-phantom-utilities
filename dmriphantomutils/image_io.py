@@ -184,7 +184,7 @@ def load_derived_image(image_path, mask_path=None):
     else:
         return DerivedImage(img)
 
-def save_image(data, affine, header, output_path):
+def save_image(data, affine, output_path):
     """Save some data to a nifti file.
 
     Parameters
@@ -193,12 +193,9 @@ def save_image(data, affine, header, output_path):
         The image data to be saved
     affine
         The affine transform to be used
-    header
-        The nifti header to be used
     output_path : string
         Path to the file to be saved 
     """
-    new_img = nib.nifti1.Nifti1Image(data, affine,
-            header=header)
+    new_img = nib.nifti1.Nifti1Image(data, affine)
     nib.save(new_img, output_path)
 
