@@ -11,6 +11,7 @@ Welcome to dMRI Phantom Utilities's documentation!
    :caption: Contents:
 
    usage/installation
+   usage/example
    api/modules
 
 Indices and tables
