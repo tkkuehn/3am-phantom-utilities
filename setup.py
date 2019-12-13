@@ -20,7 +20,7 @@ setuptools.setup(
         'Programming Language :: Python :: 3',
         'Topic :: Scientific/Engineering'
     ],
-    description='DKI analysis for diffusion phantoms',
+    description='3D printed diffusion phantom analysis',
     long_description=long_description,
     long_description_content_type='text/markdown',
     packages=setuptools.find_packages(exclude='test'),
