@@ -119,7 +119,7 @@ We're left with masks, MD maps, and ground truth maps for each phantom in our so
         os.path.join(build_dir, 'slice_2_summary.tsv'),
         data_table,
         delimiter='\t',
-        header='\t'.join('crossing_angle', 'md'),
+        header='\t'.join(['crossing_angle', 'md']),
         comments='')
 
 With this kind of table, it's straightforward to perform further analysis of your phantom data with a tool like pandas or R.
