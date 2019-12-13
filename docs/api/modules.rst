@@ -6,7 +6,6 @@ Module index
 
    automask
    b_selection
-   data_plotting
    dipy_fit
    image_io
    scan_info
