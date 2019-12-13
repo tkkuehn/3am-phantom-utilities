@@ -148,7 +148,7 @@ class MaskedDerivedImage(DerivedImage):
             mask = mask[..., 0]
 
         self.mask = mask
-        self.data = np.ma.array(img_data, mask=~mask)
+        self.data = np.ma.array(img_data, mask=np.logical_not(mask))
 
     def get_image(self):
         """A 3D numpy array with the derived data, ignoring the mask."""
@@ -199,3 +199,45 @@ def save_image(data, affine, output_path):
     new_img = nib.nifti1.Nifti1Image(data, affine)
     nib.save(new_img, output_path)
 
+def gen_table(derived_images):
+    """Organize the model outputs for a phantom in a table.
+
+    Parameters
+    ----------
+    derived_images : collection of MaskedDerivedImages
+        A collection of derived images, each corresponding to a single
+        model output from the same phantom. Each of these images must
+        have the same mask associated with them.
+
+    Returns
+    -------
+    array_like
+        A table where each row corresponds to one voxel, and each
+        column corresponds to one derived image.
+    """
+
+    if len(derived_images) == 0:
+        # no input images, so just return empty table
+        return np.array([])
+
+    for i in range(len(derived_images) - 1):
+        if not np.array_equal(
+                derived_images[i].mask, derived_images[i + 1].mask):
+            raise ValueError('Images must have the same mask.')
+
+    mask = derived_images[0].mask
+
+    data_table = np.zeros([int(mask.sum()), len(derived_images)])
+
+    col_idx = 0
+
+    for m_idx, m_val in np.ndenumerate(mask):
+        if not m_val:
+            continue
+
+        for idx, img in zip(range(len(derived_images)), derived_images):
+            data_table[col_idx, idx] = img.get_image()[m_idx]
+
+        col_idx += 1
+
+    return data_table

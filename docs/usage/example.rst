@@ -5,6 +5,7 @@ To demonstrate the capabilities of dMRI Phantom Utilities, we'll perform a DTI f
 
 We'll start by loading the example phantom data (available for download `here <https://openneuro.org/datasets/ds002350/>`_)::
 
+    import os
     from dmriphantomutils import image_io
     source_dir = './resources/manual_complex_bids/sub-01/ses-01/dwi/'
     unmasked_dwi = image_io.load_dwi(
@@ -14,6 +15,7 @@ We'll start by loading the example phantom data (available for download `here <h
 
 To generate ground truth images of our phantoms, we'll need to use ``scan_info`` to describe their infill (and some supplementary information about the study)::
 
+    import datetime
     from dmriphantomutils import scan_info
     bending = scan_info.Phantom(
         225, 30, 0.1, 100, scan_info.ConcentricArcPattern((0, 10)))
@@ -33,13 +35,14 @@ To generate ground truth images of our phantoms, we'll need to use ``scan_info``
         225, 30, 0.1, 100, scan_info.ParallelLinePattern(0))
     water = scan_info.WaterSlice()
 
-    tube = [water, kissing, bending, bending, crossing, straight]
+    tube = [water, kissing, fanning, bending, crossing, straight]
     scan = scan_info.SingleScan(slice(0, 6))
     session = scan_info.ScanSession(datetime.date(2019, 7, 9), [scan])
     study = scan_info.Study('bending', tube, [session])
 
 To efficiently perform our DTI fit and automatically register our ground truths, we'll want a mask for each of our phantoms. We can use ``automask`` to generate these masks::
 
+    import numpy as np
     from dmriphantomutils import automask
 
     slice_masks = [automask.mask_phantom(
@@ -97,7 +100,25 @@ Finally, we can give ``transform_data`` the fiducials, centroids, and phantom in
                 metric_img, dwi.img.affine,
                 os.path.join(
                     build_dir,
-                    'slice_' + str(slice_idx) + 'metric_' + metric + '.nii.gz'))
+                    'slice_' + str(slice_idx) + '_metric_' + metric + '.nii.gz'))
 
-We're left with masks, MD maps, and ground truth maps for each phantom in our source image. Using these masks, we could investigate the relationship between DTI metrics and crossing angle, for one example.
+We're left with masks, MD maps, and ground truth maps for each phantom in our source image. Let's make a table summarizing the MD and ground truth in one of the phantoms::
+
+    # load the niftis we already produced
+    md_img = image_io.load_derived_image(
+        os.path.join(build_dir, 'md_slice_2.nii.gz'),
+        mask_path=os.path.join(build_dir, 'mask_slice_2.nii.gz'))
+    angle_img = image_io.load_derived_image(
+        os.path.join(build_dir, 'slice_2_metric_crossing_angle.nii.gz'),
+        mask_path=os.path.join(build_dir, 'mask_slice_2.nii.gz'))
+
+    data_table = image_io.gen_table([angle_img, md_img])
+
+    # save our table as a tsv for further processing
+    np.savetxt(
+        os.path.join(build_dir, 'slice_2_summary.tsv'),
+        data_table,
+        delimiter='\t',
+        header='\t'.join('crossing_angle', 'md'),
+        comments='')
 
