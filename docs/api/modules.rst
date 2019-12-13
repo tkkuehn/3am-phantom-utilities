@@ -1,5 +1,5 @@
-dmriphantomutils API
-====================
+Module index
+============
 
 .. toctree::
    :maxdepth: 4
