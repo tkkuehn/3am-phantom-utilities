@@ -6,7 +6,7 @@
 Welcome to the dMRI Phantom Utilities user documentation!
 =========================================================
 
-dMRI phantom utilities provide a convenient framework for analyzing diffusion-weighted MR images of 3D printed axon-mimetic phantoms. Using this package, you can automatically mask the phantoms in an image, perform a DTI or DKI fit of phantom data, and generate a ground truth image of fibre orientation or crossing angle registered to the source DWI.
+dMRI phantom utilities provide a convenient framework for analyzing diffusion-weighted MR images of 3D printed axon-mimetic (3AM) phantoms. Using this package, you can automatically mask the phantoms in an image, perform a DTI or DKI fit of phantom data, and generate a ground truth image of fibre orientation or crossing angle registered to the source DWI.
 
 .. toctree::
    :maxdepth: 2
