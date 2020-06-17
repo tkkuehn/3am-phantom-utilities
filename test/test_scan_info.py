@@ -42,3 +42,9 @@ class TestAlternatingPattern(unittest.TestCase):
         self.assertEqual(get_crossing_angle((0, 0)), 90)
         self.assertEqual(get_crossing_angle((1, 0)), 0)
 
+    def test_get_arc_radius(self):
+        get_arc_radius = (
+            self.pattern.get_geometry_generators()['arc_radius'])
+        self.assertEqual(get_arc_radius((0, 1)), 1)
+        self.assertEqual(get_arc_radius((3, 4)), 5)
+

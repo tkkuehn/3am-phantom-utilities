@@ -198,10 +198,14 @@ class AlternatingPattern:
 
         For alternating patterns, only the crossing angle has a consistent
         definition, which is based on the directions of the underlying
-        infill patterns.
+        infill patterns. That said, this method will also return
+        'arc_radius', which returns the minimum radius of fibre curvature in
+        a voxel, unless there is no fibre curvature, in which case it will
+        default to zero.
         """
 
-        return {'crossing_angle': self._get_crossing_angle}
+        return {'crossing_angle': self._get_crossing_angle,
+                'arc_radius': self._get_arc_radius}
 
     def _get_crossing_angle(self, point):
         patterns = [self.pattern_0, self.pattern_1]
@@ -214,4 +218,18 @@ class AlternatingPattern:
             return 180 - crossing_angle
         else:
             return crossing_angle
+
+    def _get_arc_radius(self, point):
+        patterns = [self.pattern_0, self.pattern_1]
+        radii = []
+        for pattern in patterns:
+            generators = pattern.get_geometry_generators()
+            if 'arc_radius' in generators.keys():
+                radii.append(generators['arc_radius'](point))
+
+        if len(radii) == 0:
+            # Zero will mean no fibre curvature in this voxel
+            return 0
+        
+        return min(radii)
 
